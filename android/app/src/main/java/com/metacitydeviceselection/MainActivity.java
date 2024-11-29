@@ -50,7 +50,7 @@ public class MainActivity extends ReactActivity {
                     | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                     | View.SYSTEM_UI_FLAG_FULLSCREEN
                     | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
-    onScreenTouch();
+    //onScreenTouch();
 
 
 
@@ -65,7 +65,7 @@ public class MainActivity extends ReactActivity {
       if(handler!=null) handler.removeCallbacksAndMessages(null); handler= null;
 
       timeThread = null;
-      onScreenTouch();
+      //onScreenTouch();
     }
     return super.dispatchTouchEvent(ev);
   }

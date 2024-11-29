@@ -71,12 +71,12 @@ export const smartroCancelService = async() =>{
 export const servicePayment = async(dispatch, data)=>{
     const {SmartroPay} = NativeModules;
     const BSN_NO = await AsyncStorage.getItem("BSN_NO")
-    //const CAT_ID = await AsyncStorage.getItem("TID")
-    const CAT_ID = "7109912041";
+    const CAT_ID = await AsyncStorage.getItem("TID")
+    //const CAT_ID = "7109912041";
 
     const COMMON_PAY_DATA = {"cat-id":CAT_ID, "business-no":BSN_NO};
     const smartroData = {"service":"payment", "type":"credit", "persional-id":"", ...data, ...COMMON_PAY_DATA};
-
+    console.log("smartroData: ",smartroData);
     return await new Promise(function(resolve, reject){
         SmartroPay.prepareSmartroPay(
             JSON.stringify(smartroData),
