@@ -583,3 +583,47 @@ export async function openInstallmentPopup(dispatch,getState,title, okTitle, can
         }
     })
 }
+
+export function trimSmartroResultData(payData) {
+    console.log("payData: ",payData);
+    var cardNo = payData["card-no"];
+    var TrdAmt = payData["payAmt"];
+    var TaxAmt = payData["vatAmt"];
+    var SvcAmt = 0;
+    var AuNo = payData["approval-no"];
+    var TrdDate = payData["approval-date"];
+    var InpNm = payData["issuer-info"];
+    var Month = payData["installment"];
+
+    const trimmedData = {"CardNo":cardNo, "TrdAmt":TrdAmt,"TaxAmt":TaxAmt,"SvcAmt":SvcAmt,"AuNo":AuNo,"TrdDate":TrdDate,"InpNm":InpNm,"Month":Month}
+    return trimmedData;
+    
+    //var cardNo = payData?.CardNo;
+            //cardNo = cardNo.replace(/\*/gi,"");
+    /* 
+            cardNo = cardNo.replace(/-/gi,"");
+            addOrderData = {
+                TOTAL_AMT:Number(payData?.TrdAmt)+Number(payData?.TaxAmt),
+                TOTAL_VAT:Number(payData?.TaxAmt),
+                TOTAL_DC:Number(payData?.SvcAmt),
+                ORDER_STATUS:"3",
+                CANCEL_YN:"N",
+                PREPAYMENT_YN:"N",
+                CUST_CARD_NO:`${payData?.CardNo}`,
+                CUST_NM:``,
+                PAYMENT_CNT:1,
+                PAYMENT_INFO:[{
+                    PAY_SEQ:1,
+                    PAY_KIND:"2",
+                    PAY_AMT:Number(payData?.TrdAmt)+Number(payData?.TaxAmt),
+                    PAY_VAT:Number(payData?.TaxAmt),
+                    PAY_APV_NO:`${payData?.AuNo}`,
+                    PAY_APV_DATE:`20${payData?.TrdDate?.substr(0,6)}`,
+                    PAY_CARD_NO:`${cardNo}********`,
+                    PAY_UPD_DT:`20${payData?.TrdDate}`,
+                    PAY_CANCEL_YN:"N",
+                    PAY_CARD_TYPE:`${payData?.InpNm}`,
+                    PAY_CARD_MONTH:`${payData?.Month}`
+                }]
+            }; */
+}

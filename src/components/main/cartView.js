@@ -14,7 +14,7 @@ import { LANGUAGE } from '../../resources/strings';
 import { setCartView, setIconClick } from '../../store/cart';
 import { IconWrapper } from '../../styles/main/topMenuStyle';
 import TopButton from '../menuComponents/topButton';
-import {  getDeviceInfo, getStoreID, isNetworkAvailable, itemEnableCheck, numberWithCommas, openFullSizePopup, openTransperentPopup } from '../../utils/common';
+import {  getDeviceInfo, getStoreID, isNetworkAvailable, itemEnableCheck, numberWithCommas, openFullSizePopup, openTransperentPopup, trimSmartroResultData } from '../../utils/common';
 import { adminDataPost, initOrderList, postLog, postOrderToPos, presetOrderData, setDutchOrderList, setOrderProcess } from '../../store/order';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {isEmpty} from 'lodash';
@@ -127,7 +127,6 @@ const CartView = () =>{
                     setPayProcess(false);
                     return;
                 }
-                console.log("111111111");
                 const orderData = await metaPostPayFormat(orderList,{}, allItems);
                 if(orderData) {
                     var payAmt = 0;
@@ -144,8 +143,28 @@ const CartView = () =>{
                     console.log("serviceSetting: ",payDeviceType);
                     if(payDeviceType=="smartro") {
                         //serviceSetting();
-                        const paymentData = {"deal":"approval","total-amount":`${Number(payAmt)+Number(vatAmt)}`,"installment":monthSelected, "attribute":["attr-continuous-trx","attr-include-sign-bmp-buffer","attr-enable-switching-payment","attr-display-ui-of-choice-pay"]};
-                        servicePayment(dispatch,paymentData);
+                        const paymentData = {"deal":"approval","total-amount":`${Number(payAmt)+Number(vatAmt)}`,"installment":monthSelected, "attribute":["attr-continuous-trx","attr-enable-switching-payment","attr-display-ui-of-choice-pay"]};
+                        //const paymentData = {"deal":"approval","total-amount":`${Number(payAmt)+Number(vatAmt)}`,"installment":monthSelected, "attribute":["attr-continuous-trx"]};
+                        //const result = {"service":"payment","deal":"cancellation","type":"credit","persional-id":"","total-amount":"105","approval-no":"46254849","approval-date":"241204","attribute":["attr-continuous-trx","attr-include-sign-bmp-buffer","attr-enable-switching-payment","attr-display-ui-of-choice-pay"],"cat-id":"7109912041","business-no":"2118806806","device-name":"SMT-R231","device-auth-info":"####SMT-R231","device-auth-ver":"1001","device-serial":"S522121235","card-no":"94119400********","business-name":"주식회사 우리포스","business-address":"서울 영등포구 선유로3길 10 하우스디 비즈 706호","business-owner-name":"김정엽","business-phone-no":"02  15664551","van-tran-seq":"241204000722","response-code":"CV","approval-time":"000723","issuer-info":"0300마이홈플러스신한","acquire-info":"0300신한카드","display-msg":"취소금액상이\r확인요망","service-result":"0000"};
+                        //servicePayment(dispatch,paymentData)
+                        //.then(async (result)=>{
+                            var result = JSON.stringify({"service":"payment","type":"credit","persional-id":"","deal":"approval","total-amount":"502","installment":"","attribute":["attr-continuous-trx","attr-enable-switching-payment","attr-display-ui-of-choice-pay"],"cat-id":"7109912041","business-no":"2118806806","device-name":"SMT-R231","device-auth-info":"####SMT-R231","device-auth-ver":"1001","device-serial":"S522121235","card-no":"94119400********","business-name":"주식회사 우리포스","business-address":"서울 영등포구 선유로3길 10 하우스디 비즈 706호","business-owner-name":"김정엽","business-phone-no":"02  15664551","van-tran-seq":"241204012218","response-code":"00","approval-date":"241204","approval-time":"012220","issuer-info":"0300마이홈플러스신한","acquire-info":"0300신한카드","merchant-no":"0105512446","approval-no":"46659853","display-msg":"정상승인거래\r간편결제수단: 삼성페이승인","receipt-msg":"정상승인거래\r간편결제수단: 삼성페이승인","service-result":"0000"})
+                            console.log("result: ",result);
+                            var resultObj = JSON.parse(result);
+                            var trimmedData = trimSmartroResultData({...resultObj,...{payAmt:payAmt,vatAmt:vatAmt},...{installment:monthSelected}});
+                            var postData = Object.assign({},resultObj,trimmedData);
+                            const orderFinalData = await metaPostPayFormat(orderList,resultObj, allItems);
+                            setPayProcess(false);
+                            //console.log("postData:",postData);
+                            dispatch(postLog({payData:(postData),orderData:orderFinalData}))
+                            dispatch(postOrderToPos({isQuick:false, payData:(postData),orderData:orderFinalData, isMultiPay:false}));
+                            dispatch(adminDataPost({payData:(postData),orderData:orderFinalData, isMultiPay:false}));
+                        //})
+                        //.catch((err)=>{
+                        //    console.log("err: ",err);
+                        //})
+
+
                     }else {
                         const amtData = {amt:payAmt, taxAmt:vatAmt, months:monthSelected, bsnNo:bsnNo,termID:tidNo }
                         var kocessAppPay = new KocesAppPay();

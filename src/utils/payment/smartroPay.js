@@ -68,10 +68,35 @@ export const smartroCancelService = async() =>{
     const {SmartroPay} = NativeModules;
     SmartroPay.smartroCancelService();
 }
+
+export const serviceCancelPayment  = async(data)=>{
+    const {SmartroPay} = NativeModules;
+    const BSN_NO = await AsyncStorage.getItem("BSN_NO")
+    const CAT_ID = await AsyncStorage.getItem("TID_NO")
+    //const CAT_ID = "7109912041";
+
+    const COMMON_PAY_DATA = {"cat-id":CAT_ID, "business-no":BSN_NO};
+    const smartroData = {"service":"payment", "deal":"cancellation", "type":"credit", "persional-id":"", ...data, ...COMMON_PAY_DATA};
+    console.log("smartroData: ",smartroData);
+    return await new Promise(function(resolve, reject){
+        SmartroPay.prepareSmartroPay(
+            JSON.stringify(smartroData),
+            (error)=>{
+                console.log("error: ",error);
+                reject(error);
+            },
+            (msg)=>{
+                console.log("msg: ",msg);
+                resolve(msg);
+            });
+    })
+}
+
+
 export const servicePayment = async(dispatch, data)=>{
     const {SmartroPay} = NativeModules;
     const BSN_NO = await AsyncStorage.getItem("BSN_NO")
-    const CAT_ID = await AsyncStorage.getItem("TID")
+    const CAT_ID = await AsyncStorage.getItem("TID_NO")
     //const CAT_ID = "7109912041";
 
     const COMMON_PAY_DATA = {"cat-id":CAT_ID, "business-no":BSN_NO};
@@ -81,12 +106,11 @@ export const servicePayment = async(dispatch, data)=>{
         SmartroPay.prepareSmartroPay(
             JSON.stringify(smartroData),
             (error)=>{
-                const logErr = `\nERROR PAYMENT DATA==================================\nerrorResult:${JSON.stringify(error)}\n`
-
+                console.log("error: ",error);
                 reject(error);
             },
             (msg)=>{
-                const logMsg = `\nMSG PAYMENT DATA==================================\nerrorResult:${JSON.stringify(msg)}\n`
+                console.log("msg: ",msg);
                 resolve(msg);
             });
     })

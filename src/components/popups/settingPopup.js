@@ -22,6 +22,7 @@ import { CURRENT_VERSION, releaseNote } from '../../resources/releaseNote';
 import { isEmpty } from 'lodash'
 import messaging from '@react-native-firebase/messaging';
 import { EventRegister } from 'react-native-event-listeners';
+import { serviceCancelPayment } from '../../utils/payment/smartroPay';
 
 const SettingPopup = () =>{
 
@@ -34,6 +35,12 @@ const SettingPopup = () =>{
     const [ipText, setIpText] = useState("");
     const [tableNo, setTableNo] = useState("");
     const [storeIdx, setStoreIdx] = useState("");
+
+    // cancel payment
+    const [approvalNo, setApprovalNo] = useState("");
+    const [approvalDate, setApprovalDate] = useState("");
+    const [approvalAmt, setApprovalAmt] = useState("");
+
     // pay data
     const [bsnNo, setBsnNo] = useState("");
     const [tidNo, setTidNo] = useState("");
@@ -271,6 +278,12 @@ const SettingPopup = () =>{
         dispatch(getAdminItems())
     }
 
+    const cancelPayment = () =>{
+        const cancelData = { "total-amount":approvalAmt, "approval-no":approvalNo,"approval-date":approvalDate,  "attribute":["attr-continuous-trx","attr-include-sign-bmp-buffer","attr-enable-switching-payment","attr-display-ui-of-choice-pay"]}
+        console.log("cancelData: ",cancelData);
+        serviceCancelPayment(cancelData);
+    }
+
     return (
         <>
             {tableInfo &&
@@ -283,7 +296,7 @@ const SettingPopup = () =>{
                     </TouchableWithoutFeedback>
                     <SettingScrollView showsVerticalScrollIndicator={false}>
                         <SettingButtonWrapper>
-                             <SettingItemWrapper>
+                            <SettingItemWrapper>
                                 <TouchableWithoutFeedback onPress={()=>{ }} >
                                     <SettingButtonText isMargin={false} >스토어 ID</SettingButtonText>
                                 </TouchableWithoutFeedback> 
@@ -350,6 +363,35 @@ const SettingPopup = () =>{
                                             <Picker.Item key={"_koces"}  label = {"KOCES"} value ={"koces"} />
                                             <Picker.Item key={"_smartro"}  label = {"SMARTRO"} value ={"smartro"} />
                                     </Picker>
+                                </SelectWrapper>
+                            </SettingItemWrapper>
+
+                            <SettingItemWrapper>
+                                <TouchableWithoutFeedback onPress={()=>{ }} >
+                                    <SettingButtonText isMargin={false} >결제 취소</SettingButtonText>
+                                </TouchableWithoutFeedback> 
+                                <SelectWrapper style={{marginRight:'auto', marginLeft:'auto', paddingBottom:20}} >
+                                    {/*
+                                    { "total-amount":cancelData.total_amount, "approval-no":cancelData.approval_no,"approval-date":cancelData.approval_date,  "attribute":["attr-continuous-trx","attr-include-sign-bmp-buffer","attr-enable-switching-payment","attr-display-ui-of-choice-pay"]}
+                                    <StoreIDTextLabel style={{fontSize:30, fontWeight:"bold"}} >{storeIdx}</StoreIDTextLabel> */}
+                                    <View>
+                                        <Text>승인번호</Text>
+                                        <StoreIDTextInput  defaultValue={approvalNo} onChangeText={(val)=>{ setApprovalNo(val); }} />
+                                    </View>
+                                    <View>
+                                        <Text>승인날짜</Text>
+                                        <StoreIDTextInput  defaultValue={approvalDate}  onChangeText={(val)=>{ setApprovalDate(val); }} />
+                                    </View>
+                                    <View>
+                                        <Text>승인금액</Text>
+                                        <StoreIDTextInput  defaultValue={approvalAmt}  onChangeText={(val)=>{ setApprovalAmt(val); }} />
+                                    </View>
+
+                                    <TouchableWithoutFeedback onPress={()=>{ cancelPayment(); }}>
+                                        <SelectCancelWrapper>
+                                            <SelectCancelText>결제 취소</SelectCancelText>
+                                        </SelectCancelWrapper>
+                                    </TouchableWithoutFeedback>
                                 </SelectWrapper>
                             </SettingItemWrapper>
 
