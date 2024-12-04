@@ -116,86 +116,80 @@ const CartView = () =>{
     },[isMonthSelectShow,monthSelected])
     const makePayment = async () =>{
         const payDeviceType = await AsyncStorage.getItem("PAY_DEVICE")
-        console.log("payDeviceType: ",payDeviceType);
         
         if( tableStatus?.now_later == "선불") {
-                const bsnNo = await AsyncStorage.getItem("BSN_NO");
-                const tidNo = await AsyncStorage.getItem("TID_NO");
-                const serialNo = await AsyncStorage.getItem("SERIAL_NO");
-                if( isEmpty(bsnNo) || isEmpty(tidNo) || isEmpty(serialNo) ) {
-                    displayErrorPopup(dispatch, "XXXX", "결제정보 입력 후 이용 해 주세요.");
-                    setPayProcess(false);
-                    return;
-                }
-                const orderData = await metaPostPayFormat(orderList,{}, allItems);
-                if(orderData) {
-                    var payAmt = 0;
-                    var vatAmt = 0;
-                    for(var i=0;i<orderData.ITEM_INFO.length;i++) {
-                        payAmt = payAmt + (Number(orderData.ITEM_INFO[i].ITEM_AMT) - Number(orderData.ITEM_INFO[i].ITEM_VAT))
-                        vatAmt = vatAmt + Number(orderData.ITEM_INFO[i].ITEM_VAT);
-                        const setItems = orderData.ITEM_INFO[i].SETITEM_INFO;
-                        for(var j=0;j<setItems.length;j++) {
-                            payAmt = payAmt + (Number(orderData.ITEM_INFO[i].SETITEM_INFO[j].AMT) - Number(orderData.ITEM_INFO[i].SETITEM_INFO[j].VAT))
-                            vatAmt = vatAmt + Number(orderData.ITEM_INFO[i].SETITEM_INFO[j].VAT)
-                        }                        
-                    }
-                    console.log("serviceSetting: ",payDeviceType);
-                    if(payDeviceType=="smartro") {
-                        //serviceSetting();
-                        const paymentData = {"deal":"approval","total-amount":`${Number(payAmt)+Number(vatAmt)}`,"installment":monthSelected, "attribute":["attr-continuous-trx","attr-enable-switching-payment","attr-display-ui-of-choice-pay"]};
-                        //const paymentData = {"deal":"approval","total-amount":`${Number(payAmt)+Number(vatAmt)}`,"installment":monthSelected, "attribute":["attr-continuous-trx"]};
-                        //const result = {"service":"payment","deal":"cancellation","type":"credit","persional-id":"","total-amount":"105","approval-no":"46254849","approval-date":"241204","attribute":["attr-continuous-trx","attr-include-sign-bmp-buffer","attr-enable-switching-payment","attr-display-ui-of-choice-pay"],"cat-id":"7109912041","business-no":"2118806806","device-name":"SMT-R231","device-auth-info":"####SMT-R231","device-auth-ver":"1001","device-serial":"S522121235","card-no":"94119400********","business-name":"주식회사 우리포스","business-address":"서울 영등포구 선유로3길 10 하우스디 비즈 706호","business-owner-name":"김정엽","business-phone-no":"02  15664551","van-tran-seq":"241204000722","response-code":"CV","approval-time":"000723","issuer-info":"0300마이홈플러스신한","acquire-info":"0300신한카드","display-msg":"취소금액상이\r확인요망","service-result":"0000"};
-                        servicePayment(dispatch,paymentData)
-                        .then(async (result)=>{
-                            //var result = JSON.stringify({"service":"payment","type":"credit","persional-id":"","deal":"approval","total-amount":"502","installment":"","attribute":["attr-continuous-trx","attr-enable-switching-payment","attr-display-ui-of-choice-pay"],"cat-id":"7109912041","business-no":"2118806806","device-name":"SMT-R231","device-auth-info":"####SMT-R231","device-auth-ver":"1001","device-serial":"S522121235","card-no":"94119400********","business-name":"주식회사 우리포스","business-address":"서울 영등포구 선유로3길 10 하우스디 비즈 706호","business-owner-name":"김정엽","business-phone-no":"02  15664551","van-tran-seq":"241204012218","response-code":"00","approval-date":"241204","approval-time":"012220","issuer-info":"0300마이홈플러스신한","acquire-info":"0300신한카드","merchant-no":"0105512446","approval-no":"46659853","display-msg":"정상승인거래\r간편결제수단: 삼성페이승인","receipt-msg":"정상승인거래\r간편결제수단: 삼성페이승인","service-result":"0000"})
-                            console.log("result: ",result);
-                            var resultObj = JSON.parse(result);
-                            var trimmedData = trimSmartroResultData({...resultObj,...{payAmt:payAmt,vatAmt:vatAmt},...{installment:monthSelected}});
-                            var postData = Object.assign({},resultObj,trimmedData);
-                            const orderFinalData = await metaPostPayFormat(orderList,resultObj, allItems);
-                            setPayProcess(false);
-                            //console.log("postData:",postData);
-                            dispatch(postLog({payData:(postData),orderData:orderFinalData}))
-                            dispatch(postOrderToPos({isQuick:false, payData:(postData),orderData:orderFinalData, isMultiPay:false}));
-                            dispatch(adminDataPost({payData:(postData),orderData:orderFinalData, isMultiPay:false}));
-                        })
-                        .catch((err)=>{
-                            console.log("err: ",err);
-                        })
-
-
-                    }else {
-                        const amtData = {amt:payAmt, taxAmt:vatAmt, months:monthSelected, bsnNo:bsnNo,termID:tidNo }
-                        var kocessAppPay = new KocesAppPay();
-                        kocessAppPay.requestKocesPayment(amtData)
-                        .then(async (result)=>{ 
-                            //const result = {"AnsCode": "0000", "AnswerTrdNo": "null", "AuNo": "28872915", "AuthType": "null", "BillNo": "", "CardKind": "1", "CardNo": "9411-9400-****-****", "ChargeAmt": "null", "DDCYn": "1", "DisAmt": "null", "EDCYn": "0", "GiftAmt": "", "InpCd": "1107", "InpNm": "신한카드", "Keydate": "", "MchData": "wooriorder", "MchNo": "22101257", "Message": "마이신한P잔여 : 109                     ", "Month": "00", "OrdCd": "1107", "OrdNm": "개인신용", "PcCard": "null", "PcCoupon": "null", "PcKind": "null", "PcPoint": "null", "QrKind": "null", "RefundAmt": "null", "SvcAmt": "0", "TaxAmt": `${vatAmt}`, "TaxFreeAmt": "0", "TermID": "0710000900", "TradeNo": "000004689679", "TrdAmt": `${payAmt}`, "TrdDate": "240902182728", "TrdType": "A15"}
-                            // 결제 진행끝이다.
-                            setPayProcess(false);
-                            const orderFinalData = await metaPostPayFormat(orderList,result, allItems);
-                            dispatch(postLog({payData:result,orderData:orderFinalData}))
-                            dispatch(postOrderToPos({isQuick:false, payData:result,orderData:orderFinalData, isMultiPay:false}));
-                            dispatch(adminDataPost({payData:result,orderData:orderFinalData, isMultiPay:false}));
-                        })
-                        .catch((err)=>{
-                            // 결제 진행끝이다.
-                            setPayProcess(false);
-                            EventRegister.emit("showSpinnerNonCancel",{isSpinnerShowNonCancel:false, msg:""});
-                            dispatch(postLog({payData:err,orderData:null}))
-                            displayErrorPopup(dispatch, "XXXX", err?.Message)
-                        })
-                    }
-                }
-
-
-            }else {
-                EventRegister.emit("showSpinnerNonCancel",{isSpinnerShowNonCancel:false, msg:""});
-                const orderData = await metaPostPayFormat(orderList,{}, allItems);
-                dispatch(adminDataPost({payData:null,orderData:orderData, isMultiPay:false}));
-                dispatch(postOrderToPos({isQuick:false, payData:null,orderData:orderData, isMultiPay:false}));
+            const bsnNo = await AsyncStorage.getItem("BSN_NO");
+            const tidNo = await AsyncStorage.getItem("TID_NO");
+            const serialNo = await AsyncStorage.getItem("SERIAL_NO");
+            if( isEmpty(bsnNo) || isEmpty(tidNo) || isEmpty(serialNo) ) {
+                displayErrorPopup(dispatch, "XXXX", "결제정보 입력 후 이용 해 주세요.");
                 setPayProcess(false);
+                return;
             }
+            const orderData = await metaPostPayFormat(orderList,{}, allItems);
+            if(orderData) {
+                var payAmt = 0;
+                var vatAmt = 0;
+                for(var i=0;i<orderData.ITEM_INFO.length;i++) {
+                    payAmt = payAmt + (Number(orderData.ITEM_INFO[i].ITEM_AMT) - Number(orderData.ITEM_INFO[i].ITEM_VAT))
+                    vatAmt = vatAmt + Number(orderData.ITEM_INFO[i].ITEM_VAT);
+                    const setItems = orderData.ITEM_INFO[i].SETITEM_INFO;
+                    for(var j=0;j<setItems.length;j++) {
+                        payAmt = payAmt + (Number(orderData.ITEM_INFO[i].SETITEM_INFO[j].AMT) - Number(orderData.ITEM_INFO[i].SETITEM_INFO[j].VAT))
+                        vatAmt = vatAmt + Number(orderData.ITEM_INFO[i].SETITEM_INFO[j].VAT)
+                    }                        
+                }
+                if(payDeviceType=="smartro") {
+                    //serviceSetting();
+                    const paymentData = {"deal":"approval","total-amount":`${Number(payAmt)+Number(vatAmt)}`,"installment":monthSelected, "attribute":["attr-continuous-trx","attr-enable-switching-payment","attr-display-ui-of-choice-pay"]};
+                    //const paymentData = {"deal":"approval","total-amount":`${Number(payAmt)+Number(vatAmt)}`,"installment":monthSelected, "attribute":["attr-continuous-trx"]};
+                    //const result = {"service":"payment","deal":"cancellation","type":"credit","persional-id":"","total-amount":"105","approval-no":"46254849","approval-date":"241204","attribute":["attr-continuous-trx","attr-include-sign-bmp-buffer","attr-enable-switching-payment","attr-display-ui-of-choice-pay"],"cat-id":"7109912041","business-no":"2118806806","device-name":"SMT-R231","device-auth-info":"####SMT-R231","device-auth-ver":"1001","device-serial":"S522121235","card-no":"94119400********","business-name":"주식회사 우리포스","business-address":"서울 영등포구 선유로3길 10 하우스디 비즈 706호","business-owner-name":"김정엽","business-phone-no":"02  15664551","van-tran-seq":"241204000722","response-code":"CV","approval-time":"000723","issuer-info":"0300마이홈플러스신한","acquire-info":"0300신한카드","display-msg":"취소금액상이\r확인요망","service-result":"0000"};
+                    servicePayment(dispatch,paymentData)
+                    .then(async (result)=>{
+                        //var result = JSON.stringify({"service":"payment","type":"credit","persional-id":"","deal":"approval","total-amount":"502","installment":"","attribute":["attr-continuous-trx","attr-enable-switching-payment","attr-display-ui-of-choice-pay"],"cat-id":"7109912041","business-no":"2118806806","device-name":"SMT-R231","device-auth-info":"####SMT-R231","device-auth-ver":"1001","device-serial":"S522121235","card-no":"94119400********","business-name":"주식회사 우리포스","business-address":"서울 영등포구 선유로3길 10 하우스디 비즈 706호","business-owner-name":"김정엽","business-phone-no":"02  15664551","van-tran-seq":"241204012218","response-code":"00","approval-date":"241204","approval-time":"012220","issuer-info":"0300마이홈플러스신한","acquire-info":"0300신한카드","merchant-no":"0105512446","approval-no":"46659853","display-msg":"정상승인거래\r간편결제수단: 삼성페이승인","receipt-msg":"정상승인거래\r간편결제수단: 삼성페이승인","service-result":"0000"})
+                        console.log("result: ",result);
+                        var resultObj = JSON.parse(result);
+                        var trimmedData = trimSmartroResultData({...resultObj,...{payAmt:payAmt,vatAmt:vatAmt},...{installment:monthSelected}});
+                        var postData = Object.assign({},resultObj,trimmedData);
+                        const orderFinalData = await metaPostPayFormat(orderList,resultObj, allItems);
+                        setPayProcess(false);
+                        //console.log("postData:",postData);
+                        dispatch(postLog({payData:(postData),orderData:orderFinalData}))
+                        dispatch(postOrderToPos({isQuick:false, payData:(postData),orderData:orderFinalData, isMultiPay:false}));
+                        dispatch(adminDataPost({payData:(postData),orderData:orderFinalData, isMultiPay:false}));
+                    })
+                    .catch((err)=>{
+                        console.log("err: ",err);
+                    })
+                }else {
+                    const amtData = {amt:payAmt, taxAmt:vatAmt, months:monthSelected, bsnNo:bsnNo,termID:tidNo }
+                    var kocessAppPay = new KocesAppPay();
+                    kocessAppPay.requestKocesPayment(amtData)
+                    .then(async (result)=>{ 
+                        //const result = {"AnsCode": "0000", "AnswerTrdNo": "null", "AuNo": "28872915", "AuthType": "null", "BillNo": "", "CardKind": "1", "CardNo": "9411-9400-****-****", "ChargeAmt": "null", "DDCYn": "1", "DisAmt": "null", "EDCYn": "0", "GiftAmt": "", "InpCd": "1107", "InpNm": "신한카드", "Keydate": "", "MchData": "wooriorder", "MchNo": "22101257", "Message": "마이신한P잔여 : 109                     ", "Month": "00", "OrdCd": "1107", "OrdNm": "개인신용", "PcCard": "null", "PcCoupon": "null", "PcKind": "null", "PcPoint": "null", "QrKind": "null", "RefundAmt": "null", "SvcAmt": "0", "TaxAmt": `${vatAmt}`, "TaxFreeAmt": "0", "TermID": "0710000900", "TradeNo": "000004689679", "TrdAmt": `${payAmt}`, "TrdDate": "240902182728", "TrdType": "A15"}
+                        // 결제 진행끝이다.
+                        setPayProcess(false);
+                        const orderFinalData = await metaPostPayFormat(orderList,result, allItems);
+                        dispatch(postLog({payData:result,orderData:orderFinalData}))
+                        dispatch(postOrderToPos({isQuick:false, payData:result,orderData:orderFinalData, isMultiPay:false}));
+                        dispatch(adminDataPost({payData:result,orderData:orderFinalData, isMultiPay:false}));
+                    })
+                    .catch((err)=>{
+                        // 결제 진행끝이다.
+                        setPayProcess(false);
+                        EventRegister.emit("showSpinnerNonCancel",{isSpinnerShowNonCancel:false, msg:""});
+                        dispatch(postLog({payData:err,orderData:null}))
+                        displayErrorPopup(dispatch, "XXXX", err?.Message)
+                    })
+                }
+            }
+        }else {
+            EventRegister.emit("showSpinnerNonCancel",{isSpinnerShowNonCancel:false, msg:""});
+            const orderData = await metaPostPayFormat(orderList,{}, allItems);
+            dispatch(adminDataPost({payData:null,orderData:orderData, isMultiPay:false}));
+            dispatch(postOrderToPos({isQuick:false, payData:null,orderData:orderData, isMultiPay:false}));
+            setPayProcess(false);
+        }
     }
     const ItemOptionTitle = (additiveId) =>{
         let selOptTitleLanguage = "";

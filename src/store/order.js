@@ -2,7 +2,7 @@ import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
 import { MENU_DATA } from '../resources/menuData';
 //import { SERVICE_ID, STORE_ID } from '../resources/apiResources';
 import { addOrderToPos, getOrderByTable } from '../utils/apis';
-import { dutchPayItemCalculator, getIP, getStoreID, getTableInfo, grandTotalCalculate, numberPad, openFullSizePopup, openInstallmentPopup, openPopup, openTransperentPopup, orderListDuplicateCheck, setOrderData } from '../utils/common';
+import { dutchPayItemCalculator, getIP, getStoreID, getTableInfo, grandTotalCalculate, numberPad, openFullSizePopup, openInstallmentPopup, openPopup, openTransperentPopup, orderListDuplicateCheck, setOrderData, trimSmartroResultData } from '../utils/common';
 import { isEqual, isEmpty } from 'lodash'
 import { posErrorHandler } from '../utils/errorHandler/ErrorHandler';
 import { setCartView, setQickOrder, setQuickOrder } from './cart';
@@ -23,6 +23,7 @@ import { KocesAppPay } from '../utils/payment/kocesPay';
 import { metaPostPayFormat } from '../utils/payment/metaPosDataFormat';
 import { Alert } from 'react-native';
 import { setErrorData } from './error';
+import { servicePayment } from '../utils/payment/smartroPay';
 
 export const setOrder = createAsyncThunk("order/setOrder", async(data,{}) =>{
     return data;
@@ -834,20 +835,39 @@ export const startDutchSeparatePayment = createAsyncThunk("order/startDutchSepar
         }
         var orderData = await metaPostPayFormat(dutchOrderDividePaidList,{}, allItems).catch(err=>"err");
         //console.log("order data: ",orderData);
+        const payDeviceType = await AsyncStorage.getItem("PAY_DEVICE")
+        if(payDeviceType=="smartro") {
+            const paymentData = {"deal":"approval","total-amount":`${Number(netAmt)+Number(vatAmt)}`,"installment":monthSelected, "attribute":["attr-continuous-trx","attr-enable-switching-payment","attr-display-ui-of-choice-pay"]};
+            var result = await servicePayment(dispatch,paymentData)
+            //var result = JSON.stringify({"service":"payment","type":"credit","persional-id":"","deal":"approval","total-amount":"502","installment":"","attribute":["attr-continuous-trx","attr-enable-switching-payment","attr-display-ui-of-choice-pay"],"cat-id":"7109912041","business-no":"2118806806","device-name":"SMT-R231","device-auth-info":"####SMT-R231","device-auth-ver":"1001","device-serial":"S522121235","card-no":"94119400********","business-name":"주식회사 우리포스","business-address":"서울 영등포구 선유로3길 10 하우스디 비즈 706호","business-owner-name":"김정엽","business-phone-no":"02  15664551","van-tran-seq":"241204012218","response-code":"00","approval-date":"241204","approval-time":"012220","issuer-info":"0300마이홈플러스신한","acquire-info":"0300신한카드","merchant-no":"0105512446","approval-no":"46659853","display-msg":"정상승인거래\r간편결제수단: 삼성페이승인","receipt-msg":"정상승인거래\r간편결제수단: 삼성페이승인","service-result":"0000"})
+            console.log("result: ",result);
+            var resultObj = JSON.parse(result);
+            var trimmedData = trimSmartroResultData({...resultObj,...{payAmt:netAmt,vatAmt:vatAmt},...{installment:monthSelected}});
+            var postData = Object.assign({},resultObj,trimmedData);
+            const orderFinalData = await metaPostPayFormat(dutchOrderDividePaidList,resultObj, allItems);
+            result = trimmedData;
+            console.log("trimmed result: ",result);
+            //setPayProcess(false);
+            //console.log("postData:",postData);
+            dispatch(postLog({payData:(postData),orderData:orderFinalData}))
+            //dispatch(postOrderToPos({isQuick:false, payData:(postData),orderData:orderFinalData, isMultiPay:false}));
+            //dispatch(adminDataPost({payData:(postData),orderData:orderFinalData, isMultiPay:false}));
+            
+        }else {
 
-        var amtData = {amt:netAmt, taxAmt:vatAmt, months:monthSelected, bsnNo:bsnNo,termID:tidNo }
-        //console.log("amtData: ",amtData);
-        console.log(" 결제하기기기기기기기기기기 ")
-        //const result = {"AnsCode": "0000", "AnswerTrdNo": "null", "AuNo": "28872915", "AuthType": "null", "BillNo": "", "CardKind": "1", "CardNo": "9411-9400-****-****", "ChargeAmt": "null", "DDCYn": "1", "DisAmt": "null", "EDCYn": "0", "GiftAmt": "", "InpCd": "1107", "InpNm": "신한카드", "Keydate": "", "MchData": "wooriorder", "MchNo": "22101257", "Message": "마이신한P잔여 : 109                     ", "Month": "00", "OrdCd": "1107", "OrdNm": "개인신용", "PcCard": "null", "PcCoupon": "null", "PcKind": "null", "PcPoint": "null", "QrKind": "null", "RefundAmt": "null", "SvcAmt": "0", "TaxAmt": `${vatAmt}`, "TaxFreeAmt": "0", "TermID": "0710000900", "TradeNo": "000004689679", "TrdAmt": `${netAmt}`, "TrdDate": "240902182728", "TrdType": "A15"}
-        const result = await kocessAppPay.requestKocesPayment(amtData).catch((err)=>{
-            EventRegister.emit("showSpinnerNonCancel",{isSpinnerShowNonCancel:false, msg:""});
-            dispatch(postLog({payData:err,orderData:orderData}))
-            displayErrorPopup(dispatch, "XXXX", err?.Message);
-            return ""
-        });
-        if(result == "") {
-            return rejectWithValue();
-        } 
+            var amtData = {amt:netAmt, taxAmt:vatAmt, months:monthSelected, bsnNo:bsnNo,termID:tidNo }
+            //console.log("amtData: ",amtData);
+            //const result = {"AnsCode": "0000", "AnswerTrdNo": "null", "AuNo": "28872915", "AuthType": "null", "BillNo": "", "CardKind": "1", "CardNo": "9411-9400-****-****", "ChargeAmt": "null", "DDCYn": "1", "DisAmt": "null", "EDCYn": "0", "GiftAmt": "", "InpCd": "1107", "InpNm": "신한카드", "Keydate": "", "MchData": "wooriorder", "MchNo": "22101257", "Message": "마이신한P잔여 : 109                     ", "Month": "00", "OrdCd": "1107", "OrdNm": "개인신용", "PcCard": "null", "PcCoupon": "null", "PcKind": "null", "PcPoint": "null", "QrKind": "null", "RefundAmt": "null", "SvcAmt": "0", "TaxAmt": `${vatAmt}`, "TaxFreeAmt": "0", "TermID": "0710000900", "TradeNo": "000004689679", "TrdAmt": `${netAmt}`, "TrdDate": "240902182728", "TrdType": "A15"}
+            const result = await kocessAppPay.requestKocesPayment(amtData).catch((err)=>{
+                EventRegister.emit("showSpinnerNonCancel",{isSpinnerShowNonCancel:false, msg:""});
+                dispatch(postLog({payData:err,orderData:orderData}))
+                displayErrorPopup(dispatch, "XXXX", err?.Message);
+                return ""
+            });
+            if(result == "") {
+                return rejectWithValue();
+            } 
+        }
         
         return result; 
     }
@@ -940,16 +960,35 @@ export const startDutchPayment = createAsyncThunk("order/startDutchPayment",  as
         }
         const amtData = {amt:payAmt, taxAmt:vatAmt, months:monthSelected, bsnNo:bsnNo,termID:tidNo }
         console.log("amtData: ",amtData);
-        var kocessAppPay = new KocesAppPay();
-        const result = await kocessAppPay.requestKocesPayment(amtData).catch((err)=>{
-            EventRegister.emit("showSpinnerNonCancel",{isSpinnerShowNonCancel:false, msg:""});
-            dispatch(postLog({payData:err,orderData:null}))
-            displayErrorPopup(dispatch, "XXXX", err?.Message);
-            return ""
-        });
-        console.log("pay result: ",result); 
-        if(result == "") {
-            return rejectWithValue();
+        const payDeviceType = await AsyncStorage.getItem("PAY_DEVICE")
+        if(payDeviceType=="smartro") {
+            const paymentData = {"deal":"approval","total-amount":`${Number(payAmt)+Number(vatAmt)}`,"installment":monthSelected, "attribute":["attr-continuous-trx","attr-enable-switching-payment","attr-display-ui-of-choice-pay"]};
+            var result = await servicePayment(dispatch,paymentData)
+            //var result = JSON.stringify({"service":"payment","type":"credit","persional-id":"","deal":"approval","total-amount":"502","installment":"","attribute":["attr-continuous-trx","attr-enable-switching-payment","attr-display-ui-of-choice-pay"],"cat-id":"7109912041","business-no":"2118806806","device-name":"SMT-R231","device-auth-info":"####SMT-R231","device-auth-ver":"1001","device-serial":"S522121235","card-no":"94119400********","business-name":"주식회사 우리포스","business-address":"서울 영등포구 선유로3길 10 하우스디 비즈 706호","business-owner-name":"김정엽","business-phone-no":"02  15664551","van-tran-seq":"241204012218","response-code":"00","approval-date":"241204","approval-time":"012220","issuer-info":"0300마이홈플러스신한","acquire-info":"0300신한카드","merchant-no":"0105512446","approval-no":"46659853","display-msg":"정상승인거래\r간편결제수단: 삼성페이승인","receipt-msg":"정상승인거래\r간편결제수단: 삼성페이승인","service-result":"0000"})
+            console.log("result: ",result);
+            var resultObj = JSON.parse(result);
+            var trimmedData = trimSmartroResultData({...resultObj,...{payAmt:payAmt,vatAmt:vatAmt},...{installment:monthSelected}});
+            var postData = Object.assign({},resultObj,trimmedData);
+            const orderFinalData = await metaPostPayFormat(dutchOrderToPayList,resultObj, allItems);
+            result = trimmedData;
+            //setPayProcess(false);
+            //console.log("postData:",postData);
+            dispatch(postLog({payData:(postData),orderData:orderFinalData}))
+            //dispatch(postOrderToPos({isQuick:false, payData:(postData),orderData:orderFinalData, isMultiPay:false}));
+            //dispatch(adminDataPost({payData:(postData),orderData:orderFinalData, isMultiPay:false}));
+            
+        }else {
+            var kocessAppPay = new KocesAppPay();
+            var result = await kocessAppPay.requestKocesPayment(amtData).catch((err)=>{
+                EventRegister.emit("showSpinnerNonCancel",{isSpinnerShowNonCancel:false, msg:""});
+                dispatch(postLog({payData:err,orderData:null}))
+                displayErrorPopup(dispatch, "XXXX", err?.Message);
+                return ""
+            });
+            console.log("pay result: ",result); 
+            if(result == "") {
+                return rejectWithValue();
+            }
         }
         // 테스트
         //const result = {"AnsCode": "0000", "AnswerTrdNo": "null", "AuNo": "28872915", "AuthType": "null", "BillNo": "", "CardKind": "1", "CardNo": "9411-9400-****-****", "ChargeAmt": "null", "DDCYn": "1", "DisAmt": "null", "EDCYn": "0", "GiftAmt": "", "InpCd": "1107", "InpNm": "신한카드", "Keydate": "", "MchData": "wooriorder", "MchNo": "22101257", "Message": "마이신한P잔여 : 109                     ", "Month": "00", "OrdCd": "1107", "OrdNm": "개인신용", "PcCard": "null", "PcCoupon": "null", "PcKind": "null", "PcPoint": "null", "QrKind": "null", "RefundAmt": "null", "SvcAmt": "0", "TaxAmt": `${vatAmt}`, "TaxFreeAmt": "0", "TermID": "0710000900", "TradeNo": "000004689679", "TrdAmt": `${payAmt}`, "TrdDate": "240902182728", "TrdType": "A15"}

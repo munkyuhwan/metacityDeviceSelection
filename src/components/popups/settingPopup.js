@@ -376,15 +376,15 @@ const SettingPopup = () =>{
                                     <StoreIDTextLabel style={{fontSize:30, fontWeight:"bold"}} >{storeIdx}</StoreIDTextLabel> */}
                                     <View>
                                         <Text>승인번호</Text>
-                                        <StoreIDTextInput  defaultValue={approvalNo} onChangeText={(val)=>{ setApprovalNo(val); }} />
+                                        <StoreIDTextInput inputMode='numeric' defaultValue={approvalNo} onChangeText={(val)=>{ setApprovalNo(val); }} />
                                     </View>
                                     <View>
                                         <Text>승인날짜</Text>
-                                        <StoreIDTextInput  defaultValue={approvalDate}  onChangeText={(val)=>{ setApprovalDate(val); }} />
+                                        <StoreIDTextInput inputMode='numeric'  defaultValue={approvalDate}  onChangeText={(val)=>{ setApprovalDate(val); }} />
                                     </View>
                                     <View>
                                         <Text>승인금액</Text>
-                                        <StoreIDTextInput  defaultValue={approvalAmt}  onChangeText={(val)=>{ setApprovalAmt(val); }} />
+                                        <StoreIDTextInput inputMode='numeric'  defaultValue={approvalAmt}  onChangeText={(val)=>{ setApprovalAmt(val); }} />
                                     </View>
 
                                     <TouchableWithoutFeedback onPress={()=>{ cancelPayment(); }}>
