@@ -1,6 +1,14 @@
 
-export const CURRENT_VERSION = "2.3.3";
+export const CURRENT_VERSION = "2.3.5";
 export const releaseNote = {
+    "2.3.5": //2024.12.04
+    `
+        - 업데이트 테스트.
+    `,
+    "2.3.4": //2024.12.04
+    `
+        - 스마트로 단말기 적용.
+    `,
     "2.3.3": //2024.09.24
     `
         - 더치페이 1/n 나머지 금액 첫 결제에 적용.

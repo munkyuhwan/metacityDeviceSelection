@@ -365,15 +365,12 @@ const SettingPopup = () =>{
                                     </Picker>
                                 </SelectWrapper>
                             </SettingItemWrapper>
-
+{/* 
                             <SettingItemWrapper>
                                 <TouchableWithoutFeedback onPress={()=>{ }} >
                                     <SettingButtonText isMargin={false} >결제 취소</SettingButtonText>
                                 </TouchableWithoutFeedback> 
                                 <SelectWrapper style={{marginRight:'auto', marginLeft:'auto', paddingBottom:20}} >
-                                    {/*
-                                    { "total-amount":cancelData.total_amount, "approval-no":cancelData.approval_no,"approval-date":cancelData.approval_date,  "attribute":["attr-continuous-trx","attr-include-sign-bmp-buffer","attr-enable-switching-payment","attr-display-ui-of-choice-pay"]}
-                                    <StoreIDTextLabel style={{fontSize:30, fontWeight:"bold"}} >{storeIdx}</StoreIDTextLabel> */}
                                     <View>
                                         <Text>승인번호</Text>
                                         <StoreIDTextInput inputMode='numeric' defaultValue={approvalNo} onChangeText={(val)=>{ setApprovalNo(val); }} />
@@ -394,7 +391,7 @@ const SettingPopup = () =>{
                                     </TouchableWithoutFeedback>
                                 </SelectWrapper>
                             </SettingItemWrapper>
-
+ */}
                             <SettingItemWrapper>
                                 <TouchableWithoutFeedback onPress={()=>{ }} >
                                     <SettingButtonText isMargin={false} >테이블 세팅</SettingButtonText>
